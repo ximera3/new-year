@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>🎄 Поймай 100 игрушек! 🎄</title>
+    <style>
+        body, html { 
+            margin:0; padding:0; overflow:hidden; 
+            background: linear-gradient(to bottom, #041e42, #000828); 
+            cursor: none; 
+            user-select: none; 
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        button { cursor: pointer !important; }
+
+        #game-container { position:relative; width:100vw; height:100vh; }
+
+        .snowflake { 
+            position:absolute; color:white; pointer-events:none; user-select:none;
+            animation: fall 5s linear infinite; 
+            opacity: 0.8;
+        }
+        @keyframes fall { to { transform:translateY(110vh); } }
+
+        #ui { 
+            position:absolute; top:20px; width:100%; text-align:center; 
+            color:white; font-size:24px; z-index:10; text-shadow:0 0 5px #000; 
+        }
+        #ui span { 
+            font-size:32px; font-weight:bold; 
+            color:#FFD700; text-shadow: 0 0 5px #FFD700;
+        }
+
+        .player { 
+            position:absolute; bottom:20px; left:50%; 
+            width:220px; height:100px;
+            transform:translateX(-50%);
+            z-index:10;
+        }
+        .cabin { position:absolute; bottom:0; left:0; width:100px; height:70px; background: linear-gradient(to bottom, #B71C1C, #C62828); border-radius:10px 0 0 10px; box-shadow:inset 0 5px 10px rgba(255,255,255,0.2); }
+        .wing-front { position:absolute; bottom:20px; left:100px; width:30px; height:15px; background:#424242; border-radius:5px; }
+        .bed { position:absolute; bottom:0; left:130px; width:110px; height:60px; background: #8B4513; border-radius:0 10px 10px 0; box-shadow:inset 0 5px 10px rgba(0,0,0,0.4); }
+        .bed-wall { position:absolute; bottom:60px; left:130px; width:110px; height:20px; background:#424242; border-radius:0 5px 0 0; }
+        .bumper-back { position:absolute; bottom:15px; left:230px; width:20px; height:30px; background: #FFD700; border-radius:5px; }
+        .hood { position:absolute; bottom:70px; left:0; width:100px; height:30px; background: linear-gradient(to bottom, #B71C1C, #C62828); border-radius:10px 0 0 0; }
+        .headlight { position:absolute; bottom:75px; left:95px; width:15px; height:15px; background: radial-gradient(circle, #FFEB3B, #F57F17); border-radius:50%; box-shadow:0 0 10px #FFEB3B; }
+        .headlight-inner { position:absolute; top:3px; left:3px; width:9px; height:9px; background:white; border-radius:50%; }
+
+        .toy { 
+            position:absolute; width:45px; height:45px; 
+            pointer-events:none; 
+            animation: fall-toy linear forwards; 
+            z-index:5;
+        }
+        @keyframes fall-toy { 
+            0% { transform:translateY(-60px) scale(0.8); opacity:0; }
+            10% { opacity:1; }
+            100% { transform:translateY(110vh) scale(1); opacity:1; }
+        }
+        .toy.red { background:#E63946; border-radius:50%; box-shadow:0 0 15px #E63946; }
+        .toy.blue { background:#457B9D; border-radius:50%; box-shadow:0 0 15px #457B9D; }
+        .toy.gold { background:#FFD700; border-radius:50%; box-shadow:0 0 20px #FFD700; }
+        .toy.green { 
+            background:#2ECC71; 
+            clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+            box-shadow:0 0 15px #2ECC71;
+        }
+
+        #start-screen, #end-screen { 
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,10,30,0.95); color:white; display:flex; 
+            flex-direction:column; justify-content:center; align-items:center; 
+            font-size:28px; z-index:20; 
+        }
+        #end-screen { display:none; }
+        button { 
+            margin-top:30px; padding:15px 40px; font-size:22px; 
+            border:2px solid #FFD700; background:#111; color:#FFD700; 
+            border-radius:10px; 
+        }
+        button:hover { background:#FFD700; color:#111; transform:scale(1.05); }
+
+        #lose-msg { 
+            position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); 
+            background:#8B0000; color:white; padding:30px; border-radius:15px; 
+            font-size:30px; font-weight:bold; display:none; z-index:30; 
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity:1; } 50% { opacity:0.5; } }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="snow"></div>
+    <!-- ТАБЛО: изменено на 100 -->
+    <div id="ui">Счет: <span id="score">0</span> | Цель: 100 | Время: <span id="timer">60</span></div>
+
+    <div id="player" class="player">
+        <div class="cabin"></div>
+        <div class="hood"></div>
+        <div class="headlight"><div class="headlight-inner"></div></div>
+        <div class="wing-front"></div>
+        <div class="bed"></div>
+        <div class="bed-wall"></div>
+        <div class="bumper-back"></div>
+    </div>
+
+    <div id="start-screen">
+        <h1>🎅 Поймай 100 игрушек! 🎅</h1>
+        <p>У тебя 1 минута</p>
+        <p>Водите мышкой влево и вправо</p>
+        <button onclick="startGame()">Начать доставку</button>
+    </div>
+
+    <div id="end-screen">
+        <h1>🎄 Доставка завершена! 🎄</h1>
+        <p>Ты доставил: <span id="finalScore"></span> игрушек</p>
+        <button onclick="resetGame()">Еще раз</button>
+    </div>
+
+    <div id="lose-msg">Нужно минимум 100!</div>
+</div>
+
+<script>
+    const player = document.getElementById('player');
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const finalScoreDisplay = document.getElementById('finalScore');
+    const startScreen = document.getElementById('start-screen');
+    const endScreen = document.getElementById('end-screen');
+    const loseMsg = document.getElementById('lose-msg');
+    const gameContainer = document.getElementById('game-container');
+
+    let score = 0;
+    let timeLeft = 60;
+    let gameActive = false;
+    let toyInterval;
+    let timerInterval;
+    let loopInterval;
+
+    const containerWidth = window.innerWidth;
+    const playerWidth = player.offsetWidth;
+
+    gameContainer.addEventListener('mousemove', (e) => {
+        if (!gameActive) return;
+        
+        let targetX = e.clientX - playerWidth / 2;
+        
+        if (targetX < 0) targetX = 0;
+        if (targetX > containerWidth - playerWidth) targetX = containerWidth - playerWidth;
+        
+        player.style.left = targetX + 'px';
+    });
+
+    function spawnToy() {
+        const toy = document.createElement('div');
+        toy.classList.add('toy');
+        
+        const colors = ['red', 'blue', 'gold', 'green'];
+        toy.classList.add(colors[Math.floor(Math.random() * colors.length)]);
+        
+        toy.style.left = Math.random() * (containerWidth - 50) + 'px';
+        
+        const duration = Math.random() * 2 + 4; 
+        toy.style.animationDuration = duration + 's';
+        
+        gameContainer.appendChild(toy);
+
+        setTimeout(() => {
+            toy.remove();
+        }, duration * 1000 + 100);
+    }
+
+    function checkCollision(toy) {
+        const rectP = player.getBoundingClientRect();
+        const rectT = toy.getBoundingClientRect();
+        return !(
+            rectP.right < rectT.left ||
+            rectP.left > rectT.right ||
+            rectP.bottom < rectT.top ||
+            rectP.top > rectT.bottom
+        );
+    }
+
+    function gameLoop() {
+        const toys = document.querySelectorAll('.toy');
+        toys.forEach(toy => {
+            if (checkCollision(toy)) {
+                score++;
+                scoreDisplay.textContent = score;
+                toy.remove(); 
+            }
+        });
+    }
+
+    function startGame() {
+        score = 0; timeLeft = 60;
+        scoreDisplay.textContent = 0; timerDisplay.textContent = 60;
+        
+        startScreen.style.display = 'none';
+        endScreen.style.display = 'none';
+        loseMsg.style.display = 'none';
+        
+        player.style.left = (containerWidth / 2 - playerWidth / 2) + 'px';
+        
+        gameActive = true;
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                checkResult();
+            }
+        }, 1000);
+
+        /* ИНТЕРВАЛ ИЗМЕНЕН НА 300ms (в 2 раза чаще) */
+        toyInterval = setInterval(spawnToy, 300); 
+        loopInterval = setInterval(gameLoop, 16); 
+    }
+
+    function checkResult() {
+        gameActive = false;
+        clearInterval(timerInterval);
+        clearInterval(toyInterval);
+        clearInterval(loopInterval);
+        
+        document.querySelectorAll('.toy').forEach(t => t.remove());
+        
+        finalScoreDisplay.textContent = score;
+        
+        /* ЦЕЛЬ ИЗМЕНЕНА НА 100 */
+        if (score < 100) {
+            loseMsg.style.display = 'block';
+            setTimeout(() => {
+                endScreen.style.display = 'flex';
+                loseMsg.style.display = 'none';
+            }, 2000);
+        } else {
+            endScreen.style.display = 'flex';
+        }
+    }
+
+    function resetGame() {
+        document.querySelectorAll('.toy').forEach(t => t.remove());
+        startGame();
+    }
+
+    function createSnow() {
+        const flake = document.createElement('div');
+        flake.classList.add('snowflake');
+        flake.textContent = '❄';
+        flake.style.left = Math.random() * 100 + 'vw';
+        flake.style.fontSize = (Math.random() * 15 + 10) + 'px';
+        flake.style.opacity = Math.random() * 0.8 + 0.2;
+        document.getElementById('game-container').appendChild(flake);
+        setTimeout(() => flake.remove(), 6000);
+    }
+    setInterval(createSnow, 250);
+</script>
+
+</body>
+</html>
